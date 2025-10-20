@@ -1,0 +1,5 @@
+cargo:rustc-link-lib=static=cortex-m
+cargo:rustc-link-search=/home/robot/embassy_project/press_test/target/thumbv7em-none-eabi/release/build/cortex-m-9b4b4fc72729ddca/out
+cargo:rustc-cfg=cortex_m
+cargo:rustc-cfg=armv7m
+cargo:rustc-cfg=armv7em
