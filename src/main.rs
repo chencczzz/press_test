@@ -387,22 +387,41 @@ async fn can_task(mut can: CanConfigurator<'static>) {
     }
 }
 
+// fn moving_average(buff: &[f32]) -> f32 {
+//     let mut sum: f32 = 0.0;
+
+//     for i in 0..8 {
+//         sum += buff[i];
+//     }
+//     sum / 8.0
+// }
+
 #[embassy_executor::task]
 async fn diff_task() {
+    // let mut voltage_buff = [0.0f32; 8];
+    // let mut len = 0;
+    // let mut voltage = 0.0;
+
     loop {
         let bus_voltage = BUS_V.voltage_read();
         let inner_press = GLOBAL_INNER_SENSOR.load_f32();
         let outer_press = GLOBAL_OUTER_SENSOR.load_f32();
-        let o2_rec = O2_CONCENTRATION.load_rec_candata();
-        let o2_data = (o2_rec as f32) / 100.0;
+        // let o2_rec = O2_CONCENTRATION.load_rec_candata();
+        // let o2_data = (o2_rec as f32) / 100.0;
 
-        let press_diff1 = if (inner_press - outer_press).abs() >= 10.0 {
-            ((bus_voltage / 0.0492) / (inner_press / 1.67)) * 100.0
+        // voltage_buff[len] = bus_voltage;
+        // len = (len + 1) % 8;
+        // voltage = moving_average(&voltage_buff);
+
+        let press_diff1 = if (inner_press - outer_press).abs() >= 5.0 {
+            ((bus_voltage / 0.0492) / (((inner_press - outer_press) / 2.481) + outer_press)) * 100.0
+        // ((bus_voltage / 0.0492) / (inner_press / 1.67)) * 100.0
         } else {
             ((bus_voltage / 0.0492) / (inner_press)) * 100.0
         };
-
-        // let press_diff1 = ((bus_voltage / 0.0493) / (inner_press)) * 100.0;
+        // let press_diff1 =
+        //     ((bus_voltage / 0.0492) / (((inner_press - outer_press) / 2.45) + outer_press)) * 100.0;
+        //      let press_diff1 = ((bus_voltage / 0.0492) / (inner_press)) * 100.0;
 
         let o2_concentration: u32 = (press_diff1 * 100.0) as u32;
         let sensor_data = SensorData {
@@ -413,7 +432,6 @@ async fn diff_task() {
         O2_CONCENTRATION.store_raw(&sensor_data);
 
         info!("修改前内部传感器:气压={}kPa", inner_press);
-        // info!("修改后内部传感器:气压={}kPa", inner_press_corrected);
         info!("外部传感器:气压={}kPa", outer_press);
         info!("采样电压为:{}V", bus_voltage);
         info!("氧气浓度={}%", press_diff1);
